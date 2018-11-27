@@ -1,0 +1,172 @@
+%% PROTOCOL: Accès WIFI
+%%
+%% CLIENT_BORNE_SERVEUR:
+%%
+%% 01. C  <--- {CertificatServeur.SSID} --- B --- --- S
+%% 02. C  --- {addrMAC.nonceClient.pkC}_pkS ---> B --- --- S
+%% 03. C  --- --- B --- {AddrMAC.nonceClient.pkC}_pkS ---> S
+%% 04. C  --- --- B <--- {cleSession.nonceClient.nonceServeur}_pkC --- S
+%% 05. C  <--- {cleSession.nonceClient.nonceServeur}_pkC --- B --- --- S
+%% 06. C  --- {h(mdp).nonceServeur.addrMac}_cleSession ---> B --- --- S
+%% 07. C  --- --- B --- {H(mdp).nonceServeur.addrMac}_cleSession ---> S
+%%
+%%    Cas où le mdp est valide :
+%% 08a. C  --- --- B <--- {ok.addrIP.cleReseau}_cleSession --- S
+%% 09a. C  <--- {ok.addrIP.cleReseau}_cleSession --- B --- --- S
+%% 10a. C  --- {ok}_cleReseau ---> B --- --- S
+%% 11a. C  --- --- B --- {ok}_cleReseau ---> S
+%%
+%%    Cas où le mdp est faux :
+%% 08b. C  --- --- B <--- {faux}_cleSession --- S
+%% 09b. C  <--- {faux}_cleSession --- B --- --- S
+%%    Retour à l'étape 06.
+%%
+%% 
+%%
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% définition du rôle Borne, initiant le protocole
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+role borne (C, S: agent,             
+            PKc, PKs: public_key,      
+            SND, RCV: channel(dy)) 
+played_by C def=
+
+  local State: nat, 
+        IdClient, MdpClient, IdVideo, LienVideo, Nonce: text,
+        CleSession : symmetric_key
+
+  init State:=0
+
+  transition  
+   
+    1.  State=0 /\ RCV(start) =|> 
+            
+
+end role
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% définition du rôle Client
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+role client (C, S: agent,             
+            PKc, PKs: public_key,      
+            SND, RCV: channel(dy)) 
+played_by C def=
+
+  local State: nat, 
+        IdClient, MdpClient, IdVideo, LienVideo, Nonce: text,
+        CleSession : symmetric_key
+
+  init State:=0
+
+  transition  
+   
+    1.  State=0 /\ RCV(start) =|> 
+            
+
+end role
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% définition du rôle Serveur
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+role serveur (C, S: agent,             
+            PKc, PKs: public_key,      
+            SND, RCV: channel(dy)) 
+played_by S def=
+
+  local State: nat, 
+        IdClient, MdpClient, IdVideo, LienVideo, Nonce: text,
+        CleSession : symmetric_key
+
+  init State:=0
+
+  transition  
+   
+    2.  State=0 /\ RCV({IdClient'.MdpClient'.Nonce'}_PKs) =|> 
+            
+
+end role
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% définition du rôle Session
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+role session(C, S: agent, PKc, PKs: public_key) def=
+
+  local SC, RC, SS, RS: channel(dy)
+ 
+  composition 
+
+        client(C,S,PKc,PKs,SC,RC) /\ 
+        serveur(C,S,PKc,PKs,SS,RS)
+end role
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% définition du Scenario
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+role environment() def=
+
+    const c, s, ok: agent,
+          pkc, pks, pki: public_key,
+          cleSession : symmetric_key,
+          idCLient, idVideo, c_s_CleSession, nonce : protocol_id,
+          lienVideo, mdpClient : text,
+          h : hash_func
+
+    intruder_knowledge = {c, s, pkc, pks, pki, inv(pki), h}
+
+    composition
+
+        session(c,s,pkc,pks)
+
+end role
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% définition des Propriétés à vérifier
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+goal
+    secrecy_of cleSession
+    secrecy_of mdpClient
+    secrecy_of nonce
+    authentication_on c_s_CleSession
+end goal
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% lancement du rôle principal
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+environment()
