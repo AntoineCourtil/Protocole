@@ -8,7 +8,7 @@
 %% 04. C  --- --- B <--- {cleSession.nonceClient.nonceServeur}_pkC --- S
 %% 05. C  <--- {cleSession.nonceClient.nonceServeur}_pkC --- B --- --- S
 %% 06. C  --- {h(mdp).nonceServeur.addrMac}_cleSession ---> B --- --- S
-%% 07. C  --- --- B --- {H(mdp).nonceServeur.addrMac}_cleSession ---> S
+%% 07. C  --- --- B --- {h(mdp).nonceServeur.addrMac}_cleSession ---> S
 %%
 %%    Cas où le mdp est valide :
 %% 08a. C  --- --- B <--- {ok.addrIP.cleReseau}_cleSession --- S
@@ -21,62 +21,101 @@
 %% 09b. C  <--- {faux}_cleSession --- B --- --- S
 %%    Retour à l'étape 06.
 %%
-%% 
 %%
 %%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
-%% définition du rôle Borne, initiant le protocole
 %%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-role borne (C, S: agent,             
-            PKc, PKs: public_key,      
-            SND, RCV: channel(dy)) 
-played_by C def=
-
-  local State: nat, 
-        IdClient, MdpClient, IdVideo, LienVideo, Nonce: text,
-        CleSession : symmetric_key
-
-  init State:=0
-
-  transition  
-   
-    1.  State=0 /\ RCV(start) =|> 
-            
-
-end role
-
-
-
-
-
+%%
+%% Questions:
+%%    + Est ce que la borne possede paires de clés ?
+%%    + Pk client renvoie 2e fois @MAC ?
+%%
+%%
+%%
+%%
+%%
+%%
+%%
+%%
+%%
+%%
+%%
+%%
+%%
+%%
+%%
+%%
+%%
+%%
+%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
 %% définition du rôle Client
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-role client (C, S: agent,             
+role client (C, B, S: agent,             
             PKc, PKs: public_key,      
             SND, RCV: channel(dy)) 
 played_by C def=
 
   local State: nat, 
-        IdClient, MdpClient, IdVideo, LienVideo, Nonce: text,
-        CleSession : symmetric_key
+        AddrMAC, NonceClient, MdpClient: text
+
+  const ok: text
+
+  init State:=0
+
+  transition  
+   
+    2.  State=0 /\ RCV({SSID'.CertificatServeur'}) =|> 
+            State':=1 /\
+            AddrMAC':=new() /\
+            NonceClient':=new() /\
+            SND({AddrMAC'.NonceClient'.PKc}_PKs)
+    
+    5.  State=1 /\ RCV({CleSession'.NonceClient'.NonceServeur'}_PKc) =|> 
+            State':=2 /\
+            MdpClient':=new() /\
+            SND({h(MdpClient').NonceServeur'}_CleSession')
+
+    7.  State=2 /\ RCV({ok.AddrIP'.CleReseau'}_CleSession) =|> 
+            SND({ok}_CleReseau')
+
+            
+
+end role
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% définition du rôle Borne, initiant le protocole
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+role borne (C, B, S: agent,             
+            PKc, PKs: public_key,      
+            SND, RCV: channel(dy)) 
+played_by B def=
+
+  local State: nat, 
+        SSID, CertificatServeur: text
 
   init State:=0
 
   transition  
    
     1.  State=0 /\ RCV(start) =|> 
-            
+            State':=1 /\
+            SSID':=new() /\
+            CertificatServeur':=new() /\  
+            SND({SSID'.CertificatServeur'})
+
+    3.  State=1 /\ RCV({AddrMAC'.NonceClient'.PKc}_PKs) =|>
+            State':=2 /\
+            SND({AddrMAC'.NonceClient'.PKc}_PKs)
 
 end role
-
-
 
 
 
@@ -88,20 +127,35 @@ end role
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-role serveur (C, S: agent,             
+role serveur (C, B, S: agent,             
             PKc, PKs: public_key,      
             SND, RCV: channel(dy)) 
 played_by S def=
 
   local State: nat, 
-        IdClient, MdpClient, IdVideo, LienVideo, Nonce: text,
-        CleSession : symmetric_key
+        NonceServeur, AddrIP: text,
+        CleSession, CleReseau : symmetric_key
+
+  const ok: text
 
   init State:=0
 
   transition  
    
-    2.  State=0 /\ RCV({IdClient'.MdpClient'.Nonce'}_PKs) =|> 
+    4.  State=0 /\ RCV({AddrMAC'.NonceClient'.PKc}_PKs) =|> 
+            State':=1 /\
+            CleSession':=new() /\
+            NonceServeur':=new() /\
+            SND({CleSession'.NonceClient'.NonceServeur'}_PKc)
+
+    6.  State=1 /\ RCV({h(MdpClient').NonceServeur'}_CleSession) =|>
+            State':=2 /\
+            AddrIP':=new() /\
+            CleReseau':=new() /\
+            SND({ok.AddrIP'.CleReseau'}_CleSession)
+
+
+
             
 
 end role
@@ -115,14 +169,15 @@ end role
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-role session(C, S: agent, PKc, PKs: public_key) def=
+role session(C, B, S: agent, PKc, PKs: public_key) def=
 
-  local SC, RC, SS, RS: channel(dy)
+  local SC, RC, SB, RB, SS, RS: channel(dy)
  
   composition 
 
-        client(C,S,PKc,PKs,SC,RC) /\ 
-        serveur(C,S,PKc,PKs,SS,RS)
+        client(C,B,S,PKc,PKs,SC,RC) /\ 
+        borne(C,B,S,PKc,PKs,SB,RB) /\
+        serveur(C,B,S,PKc,PKs,SS,RS)
 end role
 
 
@@ -134,18 +189,18 @@ end role
 
 role environment() def=
 
-    const c, s, ok: agent,
+    const c, b, s: agent,
           pkc, pks, pki: public_key,
           cleSession : symmetric_key,
-          idCLient, idVideo, c_s_CleSession, nonce : protocol_id,
-          lienVideo, mdpClient : text,
+          c_s_CleSession : protocol_id,
+          mdpClient : text,
           h : hash_func
 
-    intruder_knowledge = {c, s, pkc, pks, pki, inv(pki), h}
+    intruder_knowledge = {c, b, s, pkc, pks, pki, inv(pki), h}
 
     composition
 
-        session(c,s,pkc,pks)
+        session(c,b,s,pkc,pks)
 
 end role
 
@@ -156,10 +211,7 @@ end role
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 goal
-    secrecy_of cleSession
-    secrecy_of mdpClient
-    secrecy_of nonce
-    authentication_on c_s_CleSession
+
 end goal
 
 
