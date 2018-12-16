@@ -44,7 +44,7 @@ played_by C def=
 
   transition  
    
-    2.  State=0 /\ RCV({SSID'.CertificatServeur'}_PKs) =|>
+    2.  State=0 /\ RCV(SSID'.CertificatServeur') =|>
             State':=1 /\
             AddrMAC':=new() /\
             NonceClient':=new() /\
@@ -86,7 +86,7 @@ played_by B def=
             State':=1 /\
             SSID':=new() /\
             CertificatServeur':=new() /\  
-            SND({SSID'.CertificatServeur'}_PKs)
+            SND(SSID'.CertificatServeur')
 
     3.  State=1 /\ RCV({AddrMAC'.NonceClient'.PKc}_PKs) =|>
             State':=2 /\
