@@ -60,7 +60,8 @@ role client (C, B, S: agent,
 played_by C def=
 
   local State: nat, 
-        AddrMAC, NonceClient, MdpClient: text
+        AddrMAC, NonceClient, MdpClient, SSID, CertificatServeur, NonceServeur, AddrIP: text,
+        CleSession, CleReseau : symmetric_key
 
   const ok: text
 
@@ -68,7 +69,7 @@ played_by C def=
 
   transition  
    
-    2.  State=0 /\ RCV({SSID'.CertificatServeur'}) =|> 
+    2.  State=0 /\ RCV({SSID'.CertificatServeur'}_PKs) =|>
             State':=1 /\
             AddrMAC':=new() /\
             NonceClient':=new() /\
@@ -80,6 +81,7 @@ played_by C def=
             SND({h(MdpClient').NonceServeur'}_CleSession')
 
     7.  State=2 /\ RCV({ok.AddrIP'.CleReseau'}_CleSession) =|> 
+            State':=3 /\
             SND({ok}_CleReseau')
 
             
@@ -99,7 +101,7 @@ role borne (C, B, S: agent,
 played_by B def=
 
   local State: nat, 
-        SSID, CertificatServeur: text
+        SSID, CertificatServeur, AddrMAC, NonceClient: text
 
   init State:=0
 
@@ -109,7 +111,7 @@ played_by B def=
             State':=1 /\
             SSID':=new() /\
             CertificatServeur':=new() /\  
-            SND({SSID'.CertificatServeur'})
+            SND({SSID'.CertificatServeur'}_PKs)
 
     3.  State=1 /\ RCV({AddrMAC'.NonceClient'.PKc}_PKs) =|>
             State':=2 /\
@@ -133,7 +135,7 @@ role serveur (C, B, S: agent,
 played_by S def=
 
   local State: nat, 
-        NonceServeur, AddrIP: text,
+        NonceServeur, AddrIP, AddrMAC, NonceClient, MdpClient: text,
         CleSession, CleReseau : symmetric_key
 
   const ok: text
