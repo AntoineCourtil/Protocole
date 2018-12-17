@@ -44,18 +44,21 @@ played_by C def=
 
   transition  
    
-    2.  State=0 /\ RCV(SSID'.CertificatServeur') =|>
+    02.  State=0 /\ RCV(SSID'.CertificatServeur') =|>
             State':=1 /\
+            %%Verification du Certificat avec un CA
             AddrMAC':=new() /\
             NonceClient':=new() /\
+            secret(NonceClient', nonceClient, {C,S}) /\ 
             SND({AddrMAC'.NonceClient'.PKc}_PKs)
     
-    5.  State=1 /\ RCV({CleSession'.NonceClient'.NonceServeur'}_PKc) =|> 
+    06.  State=1 /\ RCV({CleSession'.NonceClient'.NonceServeur'}_PKc) =|> 
             State':=2 /\
             MdpClient':=new() /\
+            secret(MdpClient', mdpClient, {C,S}) /\ 
             SND({h(MdpClient').NonceServeur'}_CleSession')
 
-    7.  State=2 /\ RCV({ok.AddrIP'.CleReseau'}_CleSession) =|> 
+    10.  State=2 /\ RCV({ok.AddrIP'.CleReseau'}_CleSession) =|> 
             State':=3 /\
             SND({ok}_CleReseau')
 
@@ -76,21 +79,39 @@ role borne (C, B, S: agent,
 played_by B def=
 
   local State: nat, 
-        SSID, CertificatServeur, AddrMAC, NonceClient: text
+        AddrMAC, NonceClient, MdpClient, SSID, CertificatServeur, NonceServeur, AddrIP: text,
+        CleSession, CleReseau : symmetric_key
 
   init State:=0
 
   transition  
    
-    1.  State=0 /\ RCV(start) =|> 
+    01.  State=0 /\ RCV(start) =|> 
             State':=1 /\
             SSID':=new() /\
             CertificatServeur':=new() /\  
             SND(SSID'.CertificatServeur')
 
-    3.  State=1 /\ RCV({AddrMAC'.NonceClient'.PKc}_PKs) =|>
+    03.  State=1 /\ RCV({AddrMAC'.NonceClient'.PKc}_PKs) =|>
             State':=2 /\
             SND({AddrMAC'.NonceClient'.PKc}_PKs)
+
+    05.  State=2 /\ RCV({CleSession'.NonceClient'.NonceServeur'}_PKc) =|>
+            State':=3 /\
+            request(S, C, c_s_CleSession, CleSession') /\
+            SND({CleSession'.NonceClient'.NonceServeur'}_PKc)
+
+    07.  State=3 /\ RCV({h(MdpClient').NonceServeur'}_CleSession') =|>
+            State':=4 /\
+            SND({h(MdpClient').NonceServeur'}_CleSession')
+
+    09.  State=4 /\ RCV({ok.AddrIP'.CleReseau'}_CleSession) =|>
+            State':=5 /\
+            SND({ok.AddrIP'.CleReseau'}_CleSession)
+
+    11.  State=5 /\ RCV({ok.AddrIP}_CleReseau') =|>
+            State':=6 /\
+            SND({ok.AddrIP}_CleReseau')
 
 end role
 
@@ -123,13 +144,20 @@ played_by S def=
             State':=1 /\
             CleSession':=new() /\
             NonceServeur':=new() /\
+            secret(NonceServeur', nonceServeur, {C,S}) /\ 
+            secret(CleSession', cleSession, {C,S}) /\ 
+            witness(C, S, c_s_CleSession, CleSession') /\
             SND({CleSession'.NonceClient'.NonceServeur'}_PKc)
 
-    6.  State=1 /\ RCV({h(MdpClient').NonceServeur'}_CleSession) =|>
+    8.  State=1 /\ RCV({h(MdpClient').NonceServeur'}_CleSession) =|>
             State':=2 /\
             AddrIP':=new() /\
             CleReseau':=new() /\
+            secret(CleReseau', cleReseau, {C,S}) /\ 
             SND({ok.AddrIP'.CleReseau'}_CleSession)
+
+    12.  State=2 /\ RCV({ok.AddrIP}_CleReseau') =|>
+            State':=3
 
 
 
@@ -168,8 +196,8 @@ role environment() def=
 
     const c, b, s: agent,
           pkc, pks, pki: public_key,
-          cleSession : symmetric_key,
-          c_s_CleSession : protocol_id,
+          cleSession, cleReseau : symmetric_key,
+          c_s_CleSession, nonceClient, nonceServeur : protocol_id,
           mdpClient : text,
           h : hash_func
 
@@ -188,7 +216,12 @@ end role
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 goal
-
+    secrecy_of mdpClient
+    secrecy_of nonceClient
+    secrecy_of nonceServeur
+    secrecy_of cleSession
+    secrecy_of cleReseau
+    %%authentication_on c_s_CleSession
 end goal
 
 
