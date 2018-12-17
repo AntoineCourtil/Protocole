@@ -1,6 +1,6 @@
 %% PROTOCOL: Accès WIFI
 %%
-%% CLIENT_BORNE_SERVEUR:
+%% CLIENT_BORNE_SERVEUR :
 %%
 %% 01. C  <--- {CertificatServeur.SSID} --- B --- --- S
 %% 02. C  --- {addrMAC.nonceClient.pkC}_pkS ---> B --- --- S
@@ -48,7 +48,7 @@ played_by C def=
    
     02.  State=0 /\ RCV(SSID'.CertificatServeur') =|>
             State':=1 /\
-            %% Verification du Certificat avec un CA
+            %%Verification du Certificat avec un CA por valider la PKs à partir du certificat
             AddrMAC':=new() /\
             NonceClient':=new() /\
             secret(NonceClient', nonceClient, {C,S}) /\ 
@@ -135,10 +135,10 @@ role serveur (C, B, S: agent,
 played_by S def=
 
   local State,IdClient: nat, 
-        NonceServeur, AddrIP, AddrMAC, NonceClient, MdpClient: text,
+        NonceServeur, AddrIP, AddrMAC, NonceClient, MdpClient, MdpReseau: text,
         CleSession, CleReseau : symmetric_key
 
-  const ok: text
+  const ok, mdpReseau: text
 
   init State:=0
 
@@ -157,6 +157,7 @@ played_by S def=
 
     8.  State=1 /\ RCV({h(MdpClient').NonceServeur'}_CleSession) =|>
             State':=2 /\
+            equal(h(MdpClient'),h(mdpReseau)) /\
             AddrIP':=new() /\
             CleReseau':=new() /\
             secret(CleReseau', cleReseau, {C,S}) /\ 
