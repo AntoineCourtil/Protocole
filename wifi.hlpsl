@@ -210,6 +210,7 @@ role environment() def=
           h : hash_func
 
     %% Ensemble des clients autorises a se connecter au serveur
+    %% (Seul le serveur connait cet ensemble)
     init Clients := {1,2,3}
 
     intruder_knowledge = {c, b, s, pkc, pks, pki, inv(pki), h}
