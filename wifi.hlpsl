@@ -1,6 +1,6 @@
 %% PROTOCOL: Accès WIFI
 %%
-%% CLIENT_BORNE_SERVEUR:
+%% CLIENT_BORNE_SERVEUR :
 %%
 %% 01. C  <--- {CertificatServeur.SSID} --- B --- --- S
 %% 02. C  --- {addrMAC.nonceClient.pkC}_pkS ---> B --- --- S
