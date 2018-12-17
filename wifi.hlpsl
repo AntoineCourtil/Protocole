@@ -52,7 +52,7 @@ played_by C def=
             AddrMAC':=new() /\
             NonceClient':=new() /\
             secret(NonceClient', nonceClient, {C,S}) /\ 
-            %% On ajoute l'identite du client: ici C au message
+            %% On ajoute l'identite du client au message
             SND({IdClient.AddrMAC'.NonceClient'.PKc}_PKs)
     
     06.  State=1 /\ RCV({CleSession'.NonceClient'.NonceServeur'}_PKc) =|> 
