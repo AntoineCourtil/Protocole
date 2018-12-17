@@ -46,7 +46,7 @@ played_by C def=
    
     02.  State=0 /\ RCV(SSID'.CertificatServeur') =|>
             State':=1 /\
-            %%Verification du Certificat avec un CA
+            %%Verification du Certificat avec un CA por valider la PKs à partir du certificat
             AddrMAC':=new() /\
             NonceClient':=new() /\
             secret(NonceClient', nonceClient, {C,S}) /\ 
@@ -131,10 +131,10 @@ role serveur (C, B, S: agent,
 played_by S def=
 
   local State: nat, 
-        NonceServeur, AddrIP, AddrMAC, NonceClient, MdpClient: text,
+        NonceServeur, AddrIP, AddrMAC, NonceClient, MdpClient, MdpReseau: text,
         CleSession, CleReseau : symmetric_key
 
-  const ok: text
+  const ok, mdpReseau: text
 
   init State:=0
 
@@ -151,6 +151,7 @@ played_by S def=
 
     8.  State=1 /\ RCV({h(MdpClient').NonceServeur'}_CleSession) =|>
             State':=2 /\
+            equal(h(MdpClient'),h(mdpReseau)) /\
             AddrIP':=new() /\
             CleReseau':=new() /\
             secret(CleReseau', cleReseau, {C,S}) /\ 
@@ -201,7 +202,7 @@ role environment() def=
           mdpClient : text,
           h : hash_func
 
-    intruder_knowledge = {c, b, s, pkc, pks, pki, inv(pki), h}
+    intruder_knowledge = {c, b, s, pkc, pki, inv(pki), h}
 
     composition
 
@@ -221,7 +222,7 @@ goal
     secrecy_of nonceServeur
     secrecy_of cleSession
     secrecy_of cleReseau
-    %%authentication_on c_s_CleSession
+    authentication_on c_s_CleSession
 end goal
 
 
