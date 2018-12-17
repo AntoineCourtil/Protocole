@@ -1,8 +1,8 @@
-%% IF specification of wifi.hlpsl
+%% IF specification of Protocole/wifi.hlpsl
 
 section signature:
 
-state_serveur: agent * agent * agent * public_key * public_key * nat * text * text * text * text * text * symmetric_key * symmetric_key * set(agent) * set(agent) * set(agent) * nat -> fact
+state_serveur: agent * agent * agent * public_key * public_key * set(agent) * nat * text * text * text * text * text * symmetric_key * symmetric_key * set(agent) * set(agent) * set(agent) * nat -> fact
 state_borne: agent * agent * agent * public_key * public_key * nat * text * text * text * text * text * text * text * symmetric_key * symmetric_key * nat -> fact
 state_client: agent * agent * agent * public_key * public_key * nat * text * text * text * text * text * text * text * symmetric_key * symmetric_key * set(agent) * set(agent) * nat -> fact
 
@@ -11,14 +11,14 @@ section types:
 
 h: hash_func
 nonceServeur, c_s_CleSession, nonceClient: protocol_id
+set_147, set_146, set_145, set_126, set_125: set
 cleReseau, cleSession, CleSession, CleReseau, Dummy_CleReseau, Dummy_CleSession, dummy_sk: symmetric_key
-NonceServeur, AddrIP, AddrMAC, NonceClient, MdpClient, SSID, CertificatServeur, mdpClient, Dummy_AddrIP, Dummy_NonceServeur, Dummy_MdpClient, ok, Dummy_CertificatServeur, Dummy_SSID, Dummy_NonceClient, Dummy_AddrMAC, dummy_nonce: text
-State, 6, 5, 4, 3, SID, 2, 1, 0, Dummy_State: nat
-set_134, set_133, set_132, set_113, set_112: set
-Set_89, Set_85, Set_83, Dummy_Set_89, Dummy_Set_85, Dummy_Set_83, Set_32, Set_27, Dummy_Set_32, Dummy_Set_27, ASGoal: set(agent)
+Set_90, Set_86, Set_84, Clients, Dummy_Set_90, Dummy_Set_86, Dummy_Set_84, Dummy_Set_32, Dummy_Set_27, Set_32, Set_27, set_124, ASGoal: set(agent)
 start, MGoal: message
+NonceServeur, AddrIP, AddrMAC, NonceClient, MdpClient, SSID, CertificatServeur, Dummy_AddrIP, Dummy_NonceServeur, Dummy_MdpClient, Dummy_CertificatServeur, Dummy_SSID, Dummy_NonceClient, mdpClient, Dummy_AddrMAC, dummy_nonce, ok: text
+State, 6, 5, 4, SID, 3, 2, Dummy_State, 1, 0, SID2, SID1: nat
 PKc, PKs, pkc, pks, pki: public_key
-C, B, S, c, b, s, i: agent
+C, B, S, A2Goal, A1Goal, c, b, s, x, y, z, i: agent
 
 
 section inits:
@@ -34,9 +34,13 @@ initial_state init1 :=
  iknows(inv(pki)).
  iknows(h).
  iknows(i).
- state_client(c,b,s,pkc,pks,0,dummy_nonce,dummy_nonce,dummy_nonce,dummy_nonce,dummy_nonce,dummy_nonce,dummy_nonce,dummy_sk,dummy_sk,set_112,set_113,3).
+ state_client(c,b,s,pkc,pks,0,dummy_nonce,dummy_nonce,dummy_nonce,dummy_nonce,dummy_nonce,dummy_nonce,dummy_nonce,dummy_sk,dummy_sk,set_125,set_126,3).
  state_borne(b,c,s,pkc,pks,0,dummy_nonce,dummy_nonce,dummy_nonce,dummy_nonce,dummy_nonce,dummy_nonce,dummy_nonce,dummy_sk,dummy_sk,4).
- state_serveur(s,c,b,pkc,pks,0,dummy_nonce,dummy_nonce,dummy_nonce,dummy_nonce,dummy_nonce,dummy_sk,dummy_sk,set_132,set_133,set_134,5)
+ state_serveur(s,c,b,pkc,pks,set_124,0,dummy_nonce,dummy_nonce,dummy_nonce,dummy_nonce,dummy_nonce,dummy_sk,dummy_sk,set_145,set_146,set_147,5).
+ contains(c,set_124).
+ contains(x,set_124).
+ contains(y,set_124).
+ contains(z,set_124)
 
 
 section rules:
@@ -47,7 +51,7 @@ step step_0 (C,B,S,PKc,PKs,Dummy_AddrMAC,Dummy_NonceClient,MdpClient,Dummy_SSID,
 =[exists NonceClient,AddrMAC]=>
  state_client(C,B,S,PKc,PKs,1,AddrMAC,NonceClient,MdpClient,SSID,CertificatServeur,NonceServeur,AddrIP,CleSession,CleReseau,Dummy_Set_27,Set_32,SID).
  secret(NonceClient,nonceClient,Dummy_Set_27).
- iknows(crypt(PKs,pair(AddrMAC,pair(NonceClient,PKc)))).
+ iknows(crypt(PKs,pair(C,pair(AddrMAC,pair(NonceClient,PKc))))).
  contains(C,Dummy_Set_27).
  contains(S,Dummy_Set_27)
 
@@ -77,16 +81,17 @@ step step_3 (B,C,S,PKc,PKs,AddrMAC,NonceClient,MdpClient,Dummy_SSID,Dummy_Certif
 
 step step_4 (B,C,S,PKc,PKs,Dummy_AddrMAC,Dummy_NonceClient,MdpClient,SSID,CertificatServeur,NonceServeur,AddrIP,CleSession,CleReseau,SID,AddrMAC,NonceClient) :=
  state_borne(B,C,S,PKc,PKs,1,Dummy_AddrMAC,Dummy_NonceClient,MdpClient,SSID,CertificatServeur,NonceServeur,AddrIP,CleSession,CleReseau,SID).
- iknows(crypt(PKs,pair(AddrMAC,pair(NonceClient,PKc))))
+ iknows(crypt(PKs,pair(C,pair(AddrMAC,pair(NonceClient,PKc)))))
  =>
  state_borne(B,C,S,PKc,PKs,2,AddrMAC,NonceClient,MdpClient,SSID,CertificatServeur,NonceServeur,AddrIP,CleSession,CleReseau,SID).
- iknows(crypt(PKs,pair(AddrMAC,pair(NonceClient,PKc))))
+ iknows(crypt(PKs,pair(C,pair(AddrMAC,pair(NonceClient,PKc)))))
 
 step step_5 (B,C,S,PKc,PKs,AddrMAC,Dummy_NonceClient,MdpClient,SSID,CertificatServeur,Dummy_NonceServeur,AddrIP,Dummy_CleSession,CleReseau,SID,NonceClient,NonceServeur,CleSession) :=
  state_borne(B,C,S,PKc,PKs,2,AddrMAC,Dummy_NonceClient,MdpClient,SSID,CertificatServeur,Dummy_NonceServeur,AddrIP,Dummy_CleSession,CleReseau,SID).
  iknows(crypt(PKc,pair(CleSession,pair(NonceClient,NonceServeur))))
  =>
  state_borne(B,C,S,PKc,PKs,3,AddrMAC,NonceClient,MdpClient,SSID,CertificatServeur,NonceServeur,AddrIP,CleSession,CleReseau,SID).
+ request(S,C,c_s_CleSession,CleSession,SID).
  iknows(crypt(PKc,pair(CleSession,pair(NonceClient,NonceServeur))))
 
 step step_6 (B,C,S,PKc,PKs,AddrMAC,NonceClient,Dummy_MdpClient,SSID,CertificatServeur,Dummy_NonceServeur,AddrIP,Dummy_CleSession,CleReseau,SID,MdpClient,NonceServeur,CleSession) :=
@@ -110,34 +115,37 @@ step step_8 (B,C,S,PKc,PKs,AddrMAC,NonceClient,MdpClient,SSID,CertificatServeur,
  state_borne(B,C,S,PKc,PKs,6,AddrMAC,NonceClient,MdpClient,SSID,CertificatServeur,NonceServeur,AddrIP,CleSession,CleReseau,SID).
  iknows(scrypt(CleReseau,pair(ok,AddrIP)))
 
-step step_9 (S,C,B,PKc,PKs,Dummy_NonceServeur,AddrIP,Dummy_AddrMAC,Dummy_NonceClient,MdpClient,Dummy_CleSession,CleReseau,Dummy_Set_83,Dummy_Set_85,Set_89,SID,NonceServeur,AddrMAC,NonceClient,CleSession) :=
- state_serveur(S,C,B,PKc,PKs,0,Dummy_NonceServeur,AddrIP,Dummy_AddrMAC,Dummy_NonceClient,MdpClient,Dummy_CleSession,CleReseau,Dummy_Set_83,Dummy_Set_85,Set_89,SID).
- iknows(crypt(PKs,pair(AddrMAC,pair(NonceClient,PKc))))
+step step_9 (S,C,B,PKc,PKs,Clients,Dummy_NonceServeur,AddrIP,Dummy_AddrMAC,Dummy_NonceClient,MdpClient,Dummy_CleSession,CleReseau,Dummy_Set_84,Dummy_Set_86,Set_90,SID,NonceServeur,AddrMAC,NonceClient,CleSession) :=
+ state_serveur(S,C,B,PKc,PKs,Clients,0,Dummy_NonceServeur,AddrIP,Dummy_AddrMAC,Dummy_NonceClient,MdpClient,Dummy_CleSession,CleReseau,Dummy_Set_84,Dummy_Set_86,Set_90,SID).
+ iknows(crypt(PKs,pair(C,pair(AddrMAC,pair(NonceClient,PKc))))).
+ contains(C,Clients)
 =[exists NonceServeur,CleSession]=>
- state_serveur(S,C,B,PKc,PKs,1,NonceServeur,AddrIP,AddrMAC,NonceClient,MdpClient,CleSession,CleReseau,Dummy_Set_83,Dummy_Set_85,Set_89,SID).
- secret(NonceServeur,nonceServeur,Dummy_Set_83).
- secret(CleSession,cleSession,Dummy_Set_85).
+ state_serveur(S,C,B,PKc,PKs,Clients,1,NonceServeur,AddrIP,AddrMAC,NonceClient,MdpClient,CleSession,CleReseau,Dummy_Set_84,Dummy_Set_86,Set_90,SID).
+ secret(NonceServeur,nonceServeur,Dummy_Set_84).
+ secret(CleSession,cleSession,Dummy_Set_86).
+ witness(C,S,c_s_CleSession,CleSession).
  iknows(crypt(PKc,pair(CleSession,pair(NonceClient,NonceServeur)))).
- contains(C,Dummy_Set_83).
- contains(S,Dummy_Set_83).
- contains(C,Dummy_Set_85).
- contains(S,Dummy_Set_85)
+ contains(C,Dummy_Set_84).
+ contains(S,Dummy_Set_84).
+ contains(C,Dummy_Set_86).
+ contains(S,Dummy_Set_86).
+ contains(C,Clients)
 
-step step_10 (S,C,B,PKc,PKs,Dummy_NonceServeur,Dummy_AddrIP,AddrMAC,NonceClient,Dummy_MdpClient,CleSession,Dummy_CleReseau,Set_83,Set_85,Dummy_Set_89,SID,NonceServeur,AddrIP,MdpClient,CleReseau) :=
- state_serveur(S,C,B,PKc,PKs,1,Dummy_NonceServeur,Dummy_AddrIP,AddrMAC,NonceClient,Dummy_MdpClient,CleSession,Dummy_CleReseau,Set_83,Set_85,Dummy_Set_89,SID).
+step step_10 (S,C,B,PKc,PKs,Clients,Dummy_NonceServeur,Dummy_AddrIP,AddrMAC,NonceClient,Dummy_MdpClient,CleSession,Dummy_CleReseau,Set_84,Set_86,Dummy_Set_90,SID,NonceServeur,AddrIP,MdpClient,CleReseau) :=
+ state_serveur(S,C,B,PKc,PKs,Clients,1,Dummy_NonceServeur,Dummy_AddrIP,AddrMAC,NonceClient,Dummy_MdpClient,CleSession,Dummy_CleReseau,Set_84,Set_86,Dummy_Set_90,SID).
  iknows(scrypt(CleSession,pair(apply(h,MdpClient),NonceServeur)))
 =[exists CleReseau,AddrIP]=>
- state_serveur(S,C,B,PKc,PKs,2,NonceServeur,AddrIP,AddrMAC,NonceClient,MdpClient,CleSession,CleReseau,Set_83,Set_85,Dummy_Set_89,SID).
- secret(CleReseau,cleReseau,Dummy_Set_89).
+ state_serveur(S,C,B,PKc,PKs,Clients,2,NonceServeur,AddrIP,AddrMAC,NonceClient,MdpClient,CleSession,CleReseau,Set_84,Set_86,Dummy_Set_90,SID).
+ secret(CleReseau,cleReseau,Dummy_Set_90).
  iknows(scrypt(CleSession,pair(ok,pair(AddrIP,CleReseau)))).
- contains(C,Dummy_Set_89).
- contains(S,Dummy_Set_89)
+ contains(C,Dummy_Set_90).
+ contains(S,Dummy_Set_90)
 
-step step_11 (S,C,B,PKc,PKs,NonceServeur,AddrIP,AddrMAC,NonceClient,MdpClient,CleSession,Dummy_CleReseau,Set_83,Set_85,Set_89,SID,CleReseau) :=
- state_serveur(S,C,B,PKc,PKs,2,NonceServeur,AddrIP,AddrMAC,NonceClient,MdpClient,CleSession,Dummy_CleReseau,Set_83,Set_85,Set_89,SID).
+step step_11 (S,C,B,PKc,PKs,Clients,NonceServeur,AddrIP,AddrMAC,NonceClient,MdpClient,CleSession,Dummy_CleReseau,Set_84,Set_86,Set_90,SID,CleReseau) :=
+ state_serveur(S,C,B,PKc,PKs,Clients,2,NonceServeur,AddrIP,AddrMAC,NonceClient,MdpClient,CleSession,Dummy_CleReseau,Set_84,Set_86,Set_90,SID).
  iknows(scrypt(CleReseau,pair(ok,AddrIP)))
  =>
- state_serveur(S,C,B,PKc,PKs,3,NonceServeur,AddrIP,AddrMAC,NonceClient,MdpClient,CleSession,CleReseau,Set_83,Set_85,Set_89,SID)
+ state_serveur(S,C,B,PKc,PKs,Clients,3,NonceServeur,AddrIP,AddrMAC,NonceClient,MdpClient,CleSession,CleReseau,Set_84,Set_86,Set_90,SID)
 
 
 section properties:
@@ -161,6 +169,15 @@ property secrecy_of_cleSession (MGoal,ASGoal) :=
 property secrecy_of_cleReseau (MGoal,ASGoal) :=
  [] ((secret(MGoal,cleReseau,ASGoal) /\ iknows(MGoal))
      => contains(i,ASGoal))
+
+property authentication_on_c_s_CleSession (A1Goal,A2Goal,MGoal,SID,SID1,SID2) :=
+ [] (((request(A1Goal,A2Goal,c_s_CleSession,MGoal,SID)
+       /\ ~ equal(A2Goal,i))
+      => witness(A2Goal,A1Goal,c_s_CleSession,MGoal))
+     /\ ((request(A1Goal,A2Goal,c_s_CleSession,MGoal,SID1)
+           /\ request(A1Goal,A2Goal,c_s_CleSession,MGoal,SID2)
+           /\ ~ equal(A2Goal,i))
+          => equal(SID1,SID2)))
 
 
 section attack_states:
@@ -189,4 +206,14 @@ attack_state secrecy_of_cleReseau (MGoal,ASGoal) :=
  iknows(MGoal).
  secret(MGoal,cleReseau,ASGoal) &
  not(contains(i,ASGoal))
+
+attack_state authentication_on_c_s_CleSession (A1Goal,A2Goal,MGoal,SID) :=
+ request(A1Goal,A2Goal,c_s_CleSession,MGoal,SID) &
+ not(witness(A2Goal,A1Goal,c_s_CleSession,MGoal)) &
+ not(equal(A2Goal,i))
+attack_state replay_protection_on_c_s_CleSession (A2Goal,A1Goal,MGoal,SID1,SID2) :=
+ request(A1Goal,A2Goal,c_s_CleSession,MGoal,SID1).
+ request(A1Goal,A2Goal,c_s_CleSession,MGoal,SID2) &
+ not(equal(SID1,SID2)) &
+ not(equal(A2Goal,i))
 
