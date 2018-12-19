@@ -1,3 +1,4 @@
+```matlab
 %% PROTOCOL: Accès WIFI
 %%
 %% CLIENT_BORNE_SERVEUR :
@@ -34,15 +35,13 @@ role client (C, B, S: agent,
             SND, RCV: channel(dy)) 
 played_by C def=
 
-  local State, IdClient: nat, 
+  local State: nat, 
         AddrMAC, NonceClient, MdpClient, SSID, CertificatServeur, NonceServeur, AddrIP: text,
         CleSession, CleReseau : symmetric_key
 
   const ok: text
 
-  init State:=0 /\
-  %% ID unique permettant de s'authentifier au serveur
-       IdClient:=1
+  init State:=0
 
   transition  
    
@@ -52,8 +51,7 @@ played_by C def=
             AddrMAC':=new() /\
             NonceClient':=new() /\
             secret(NonceClient', nonceClient, {C,S}) /\ 
-            %% On ajoute l'identite du client au message
-            SND({IdClient.AddrMAC'.NonceClient'.PKc}_PKs)
+            SND({AddrMAC'.NonceClient'.PKc}_PKs)
     
     06.  State=1 /\ RCV({CleSession'.NonceClient'.NonceServeur'}_PKc) =|> 
             State':=2 /\
@@ -81,7 +79,7 @@ role borne (C, B, S: agent,
             SND, RCV: channel(dy)) 
 played_by B def=
 
-  local State, IdClient: nat, 
+  local State: nat, 
         AddrMAC, NonceClient, MdpClient, SSID, CertificatServeur, NonceServeur, AddrIP: text,
         CleSession, CleReseau : symmetric_key
 
@@ -95,9 +93,9 @@ played_by B def=
             CertificatServeur':=new() /\  
             SND(SSID'.CertificatServeur')
 
-    03.  State=1 /\ RCV({IdClient.AddrMAC'.NonceClient'.PKc}_PKs) =|>
+    03.  State=1 /\ RCV({AddrMAC'.NonceClient'.PKc}_PKs) =|>
             State':=2 /\
-            SND({IdClient.AddrMAC'.NonceClient'.PKc}_PKs)
+            SND({AddrMAC'.NonceClient'.PKc}_PKs)
 
     05.  State=2 /\ RCV({CleSession'.NonceClient'.NonceServeur'}_PKc) =|>
             State':=3 /\
@@ -130,11 +128,10 @@ end role
 
 role serveur (C, B, S: agent,             
             PKc, PKs: public_key,      
-            SND, RCV: channel(dy),
-            Clients: nat set)  
+            SND, RCV: channel(dy)) 
 played_by S def=
 
-  local State,IdClient: nat, 
+  local State: nat, 
         NonceServeur, AddrIP, AddrMAC, NonceClient, MdpClient, MdpReseau: text,
         CleSession, CleReseau : symmetric_key
 
@@ -144,8 +141,7 @@ played_by S def=
 
   transition  
    
-    4.  State=0 /\ RCV({IdClient.AddrMAC'.NonceClient'.PKc}_PKs) /\
-        in(IdClient, Clients) =|> %% Verifie si c'est un client connu par le serveur
+    4.  State=0 /\ RCV({AddrMAC'.NonceClient'.PKc}_PKs) =|> 
             State':=1 /\
             CleSession':=new() /\
             NonceServeur':=new() /\
@@ -180,7 +176,7 @@ end role
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-role session(C, B, S: agent, PKc, PKs: public_key, Clients: nat set) def=
+role session(C, B, S: agent, PKc, PKs: public_key) def=
 
   local SC, RC, SB, RB, SS, RS: channel(dy)
  
@@ -188,7 +184,7 @@ role session(C, B, S: agent, PKc, PKs: public_key, Clients: nat set) def=
 
         client(C,B,S,PKc,PKs,SC,RC) /\ 
         borne(C,B,S,PKc,PKs,SB,RB) /\
-        serveur(C,B,S,PKc,PKs,SS,RS,Clients)
+        serveur(C,B,S,PKc,PKs,SS,RS)
 end role
 
 
@@ -200,8 +196,6 @@ end role
 
 role environment() def=
 
-    local Clients: nat set
-
     const c, b, s: agent,
           pkc, pks, pki: public_key,
           cleSession, cleReseau : symmetric_key,
@@ -209,16 +203,11 @@ role environment() def=
           mdpClient : text,
           h : hash_func
 
-    %% Ensemble des clients autorises a se connecter au serveur
-    %% (Seul le serveur connait cet ensemble)
-    init Clients := {1,2,3}
-
-    intruder_knowledge = {c, b, s, pkc, pks, pki, inv(pki), h}
-
+    intruder_knowledge = {c, b, s, pkc, pki, inv(pki), h}
 
     composition
 
-        session(c,b,s,pkc,pks,Clients)
+        session(c,b,s,pkc,pks)
 
 end role
 
@@ -245,3 +234,4 @@ end goal
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 environment()
+```
