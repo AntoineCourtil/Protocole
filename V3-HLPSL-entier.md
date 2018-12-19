@@ -1,3 +1,5 @@
+```matlab
+
 %% PROTOCOL: Accès WIFI
 %%
 %% CLIENT_BORNE_SERVEUR :
@@ -250,3 +252,6 @@ end goal
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 environment()
+
+
+```
