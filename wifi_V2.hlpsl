@@ -59,11 +59,11 @@ played_by C def=
             State':=2 /\
             MdpClient':=new() /\
             secret(MdpClient', mdpClient, {C,S}) /\ 
-            SND({IdClient.h(MdpClient').NonceServeur'}_CleSession')
+            SND({h(MdpClient').NonceServeur'}_CleSession')
 
     10.  State=2 /\ RCV({ok.AddrIP'.CleReseau'}_CleSession) =|> 
             State':=3 /\
-            SND(IdClient.{ok}_CleReseau')
+            SND({ok}_CleReseau')
 
             
 
@@ -104,15 +104,15 @@ played_by B def=
             request(S, C, c_s_CleSession, CleSession') /\
             SND({CleSession'.NonceClient'.NonceServeur'}_PKc)
 
-    07.  State=3 /\ RCV({IdClient.h(MdpClient').NonceServeur'}_CleSession') =|>
+    07.  State=3 /\ RCV({h(MdpClient').NonceServeur'}_CleSession') =|>
             State':=4 /\
-            SND({IdClient.h(MdpClient').NonceServeur'}_CleSession')
+            SND({h(MdpClient').NonceServeur'}_CleSession')
 
     09.  State=4 /\ RCV({ok.AddrIP'.CleReseau'}_CleSession) =|>
             State':=5 /\
             SND({ok.AddrIP'.CleReseau'}_CleSession)
 
-    11.  State=5 /\ RCV({IdClient.ok.AddrIP}_CleReseau') =|>
+    11.  State=5 /\ RCV({ok.AddrIP}_CleReseau') =|>
             State':=6 /\
             SND({ok.AddrIP}_CleReseau')
 
@@ -131,7 +131,7 @@ end role
 role serveur (C, B, S: agent,             
             PKc, PKs: public_key,      
             SND, RCV: channel(dy),
-            ClientsOnConnecting: nat set)  
+            Clients: nat set)  
 played_by S def=
 
   local State,IdClient: nat, 
@@ -145,11 +145,9 @@ played_by S def=
   transition  
    
     4.  State=0 /\ RCV({IdClient.AddrMAC'.NonceClient'.PKc}_PKs) /\
-    %% Verifie que le client n'est pas deja connecte
-        not(in(IdClient, ClientsOnConnecting)) =|> 
+        %% Verifie si c'est un client connu par le serveur
+            in(IdClient, Clients) =|> 
             State':=1 /\
-    %% Ajoute le client aux clients connecte
-            ClientsOnConnecting' := cons(IdClient,ClientsOnConnecting) /\
             CleSession':=new() /\
             NonceServeur':=new() /\
             secret(NonceServeur', nonceServeur, {C,S}) /\ 
@@ -157,8 +155,7 @@ played_by S def=
             witness(C, S, c_s_CleSession, CleSession') /\
             SND({CleSession'.NonceClient'.NonceServeur'}_PKc)
 
-    8.  State=1 /\ RCV({IdClient.h(MdpClient').NonceServeur'}_CleSession) /\
-        in(IdClient, ClientsOnConnecting) =|>
+    8.  State=1 /\ RCV({h(MdpClient').NonceServeur'}_CleSession) =|>
             State':=2 /\
             equal(h(MdpClient'),h(mdpReseau)) /\
             AddrIP':=new() /\
@@ -166,11 +163,8 @@ played_by S def=
             secret(CleReseau', cleReseau, {C,S}) /\ 
             SND({ok.AddrIP'.CleReseau'}_CleSession)
 
-    12.  State=2 /\ RCV({IdClient.ok.AddrIP}_CleReseau') /\
-        in(IdClient, ClientsOnConnecting)=|>
-            State':=3 /\
-            ClientsOnConnecting' := delete(IdClient, ClientsOnConnecting)
-
+    12.  State=2 /\ RCV({ok.AddrIP}_CleReseau') =|>
+            State':=3
 
 
 
@@ -187,7 +181,7 @@ end role
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-role session(C, B, S: agent, PKc, PKs: public_key, ClientsOnConnecting: nat set) def=
+role session(C, B, S: agent, PKc, PKs: public_key, Clients: nat set) def=
 
   local SC, RC, SB, RB, SS, RS: channel(dy)
  
@@ -195,7 +189,7 @@ role session(C, B, S: agent, PKc, PKs: public_key, ClientsOnConnecting: nat set)
 
         client(C,B,S,PKc,PKs,SC,RC) /\ 
         borne(C,B,S,PKc,PKs,SB,RB) /\
-        serveur(C,B,S,PKc,PKs,SS,RS,ClientsOnConnecting)
+        serveur(C,B,S,PKc,PKs,SS,RS,Clients)
 end role
 
 
@@ -207,7 +201,7 @@ end role
 
 role environment() def=
 
-    local ClientsOnConnecting: nat set
+    local Clients: nat set
 
     const c, b, s: agent,
           pkc, pks, pki: public_key,
@@ -216,16 +210,16 @@ role environment() def=
           mdpClient : text,
           h : hash_func
 
-    %% Ensemble des ClientsOnConnecting actuellement en cours de connexion
+    %% Ensemble des clients autorises a se connecter au serveur
     %% (Seul le serveur connait cet ensemble)
-    init ClientsOnConnecting := {}
+    init Clients := {1,2,3}
 
     intruder_knowledge = {c, b, s, pkc, pks, pki, inv(pki), h}
 
 
     composition
 
-        session(c,b,s,pkc,pks,ClientsOnConnecting)
+        session(c,b,s,pkc,pks,Clients)
 
 end role
 
